@@ -1,0 +1,22 @@
+FAILED: //frameworks/base/packages/EasterEgg:EasterEgg javac [common]
+Outputs: out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/EasterEgg.jar
+Error: exited with code: 1
+Command: rm -rf "out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/classes" "out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/anno" "out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/srcjars" && mkdir -p "out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/classes" "out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/anno" "out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/srcjars" && out/soong/host/linux-x86/bin/zipsync -d out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/srcjars -l out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/srcjars/list -f "*.java" out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/gen/R.jar && (if [ -s out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/srcjars/list ] || [ -s out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/EasterEgg.jar.rsp ] ; then out/soong/host/linux-x86/bin/soong_javac_wrapper prebuilts/jdk/jdk9/linux-x86/bin/javac -J-Xmx2048M -Xmaxerrs 9999999 -encoding UTF-8 -sourcepath "" -g -XDskipDuplicateBridges=true -XDstringConcat=inline   -bootclasspath out/soong/.intermediates/development/build/android_stubs_current/android_common/turbine-combined/android_stubs_current.jar:out/soong/.intermediates/libcore/core-lambda-stubs/android_common/turbine-combined/core-lambda-stubs.jar -classpath out/soong/.intermediates/external/kotlinc/kotlin-stdlib/android_common/combined/kotlin-stdlib.jar:out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlin/EasterEgg.jar -source 1.8 -target 1.8 -d out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/classes -s out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/anno @out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/EasterEgg.jar.rsp @out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/srcjars/list ; fi ) && out/soong/host/linux-x86/bin/soong_zip -jar -o out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/EasterEgg.jar -C out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/classes -D out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/javac/classes
+Output:
+[1mframeworks/base/packages/EasterEgg/src/com/android/egg/paint/PaintActivity.java:228: [31merror:[0m[1m cannot find symbol[0m
+            for (int i = 0; i < NUM_BRUSHES; i++) {
+[1m                                [32m^[0m[1m[0m
+  symbol:   variable NUM_BRUSHES
+  location: class PaintActivity
+[1mframeworks/base/packages/EasterEgg/src/com/android/egg/paint/PaintActivity.java:233: [31merror:[0m[1m cannot find symbol[0m
+                        (float) Math.pow((float) i / NUM_BRUSHES, 2f), minBrushWidth,
+[1m                                                     [32m^[0m[1m[0m
+  symbol:   variable NUM_BRUSHES
+  location: class PaintActivity
+[1mframeworks/base/packages/EasterEgg/src/com/android/egg/paint/PaintActivity.java:311: [31merror:[0m[1m cannot find symbol[0m
+        thisDoesNotExist();
+[1m        [32m^[0m[1m[0m
+  symbol:   method thisDoesNotExist()
+  location: class PaintActivity
+3 errors
+

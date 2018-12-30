@@ -1,0 +1,17 @@
+FAILED: //frameworks/base/packages/EasterEgg:EasterEgg kotlinc [common]
+Outputs: out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlin/EasterEgg.jar
+Error: exited with code: 1
+Command: rm -rf "out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlinc/classes" "out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlinc/srcJars" "out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlinc-build.xml" && mkdir -p "out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlinc/classes" "out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlinc/srcJars" && out/soong/host/linux-x86/bin/zipsync -d out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlinc/srcJars -l out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlinc/srcJars/list -f "*.java" out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/gen/R.jar && build/soong/scripts/gen-kotlin-build-file.sh -classpath out/soong/.intermediates/development/build/android_stubs_current/android_common/turbine-combined/android_stubs_current.jar:out/soong/.intermediates/libcore/core-lambda-stubs/android_common/turbine-combined/core-lambda-stubs.jar:out/soong/.intermediates/external/kotlinc/kotlin-stdlib/android_common/combined/kotlin-stdlib.jar out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlinc/classes out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlin/EasterEgg.jar.rsp out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlinc/srcJars/list > out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlinc-build.xml &&external/kotlinc/bin/kotlinc -no-stdlib -no-jdk -jvm-target 1.8 -Xbuild-file=out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlinc-build.xml && out/soong/host/linux-x86/bin/soong_zip -jar -o out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlin/EasterEgg.jar -C out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlinc/classes -D out/soong/.intermediates/frameworks/base/packages/EasterEgg/EasterEgg/android_common/kotlinc/classes
+Output:
+frameworks/base/packages/EasterEgg/src/com/android/egg/paint/CutoutAvoidingToolbar.kt:48:9: error: unresolved reference: thisDoesNotExist
+        thisDoesNotExist()
+        ^
+frameworks/base/packages/EasterEgg/src/com/android/egg/paint/CutoutAvoidingToolbar.kt:65:35: error: type mismatch: inferred type is Int but Char was expected
+                    cutoutRight = r.width()
+                                  ^
+frameworks/base/packages/EasterEgg/src/com/android/egg/paint/CutoutAvoidingToolbar.kt:79:35: error: none of the following functions can be called with the arguments supplied: 
+public constructor LayoutParams(c: Context!, attrs: AttributeSet!) defined in android.widget.LinearLayout.LayoutParams
+public constructor LayoutParams(width: Int, height: Int) defined in android.widget.LinearLayout.LayoutParams
+                it.layoutParams = LayoutParams(cutoutRight, MATCH_PARENT)
+                                  ^
+
