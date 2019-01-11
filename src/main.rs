@@ -1,6 +1,7 @@
 mod ansi;
 mod error;
 mod item;
+mod warning;
 
 fn main() {
     let path = match ::std::env::args().nth(1) {
