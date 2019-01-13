@@ -29,8 +29,7 @@ fn test_parse_all_error_data() {
 }
 
 #[test]
-#[ignore]
-fn test_parse_all_warning_data() {
+fn test_parse_quick_warning_data() {
     let o0 = exec("--warnings=this-does-not-exist");
     assert!(!o0.status.success());
 
@@ -39,13 +38,17 @@ fn test_parse_all_warning_data() {
 
     let o2 = exec("--warnings=tests/data/easter-egg-errors-java/verbose.log.gz");
     assert!(o2.status.success());
+}
 
-    let o3 = exec("--warnings=tests/data/idmap-warnings/verbose.log.gz");
-    assert!(o3.status.success());
+#[test]
+#[ignore]
+fn test_parse_slow_warning_data() {
+    let o0 = exec("--warnings=tests/data/idmap-warnings/verbose.log.gz");
+    assert!(o0.status.success());
 
-    let o4 = exec("--warnings=tests/data/idmap-both-errors-and-warnings/verbose.log.gz");
-    assert!(o4.status.success());
+    let o1 = exec("--warnings=tests/data/idmap-both-errors-and-warnings/verbose.log.gz");
+    assert!(o1.status.success());
 
-    let o5 = exec("--warnings=tests/data/idmap-errors/verbose.log.gz");
-    assert!(o5.status.success());
+    let o2 = exec("--warnings=tests/data/idmap-errors/verbose.log.gz");
+    assert!(o2.status.success());
 }

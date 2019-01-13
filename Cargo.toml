@@ -4,7 +4,19 @@ version = "0.1.0"
 authors = ["Mårten Kongstad <marten.kongstad@gmail.com>"]
 edition = "2018"
 
+[[bin]]
+name = "soong-digest"
+bench = false
+
 [dependencies]
 flate2 = "1.0"
+lazy_static = "1.2"
 regex = "1.1.0"
 structopt = "0.2"
+
+[dev-dependencies]
+criterion = "0.2"
+
+[[bench]]
+name = "integration"
+harness = false
