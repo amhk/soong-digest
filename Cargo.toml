@@ -8,3 +8,6 @@ edition = "2018"
 flate2 = "1.0"
 regex = "1.1.0"
 structopt = "0.2"
+
+[dev-dependencies]
+criterion = "0.2"
