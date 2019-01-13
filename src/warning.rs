@@ -18,7 +18,7 @@ pub fn parse(haystack: &str) -> Result<Vec<Item>, Box<Error>> {
 
 struct Captures<'h> {
     head: &'h str,
-    body: &'h str,
+    body: Vec<&'h str>,
 }
 
 impl<'h> Captures<'h> {
@@ -57,38 +57,44 @@ impl<'h> Captures<'h> {
             line,
             column,
             subject: strip_ansi_escape(caps.get(4).unwrap().as_str()),
-            body: strip_ansi_escape(self.body),
+            body: strip_ansi_escape(&self.body.join("\n")),
         })
     }
 }
 
 fn find_captures(haystack: &str) -> Vec<Captures> {
     lazy_static! {
-        static ref re_subject: Regex = Regex::new(r"(?m)^\S+:\d+:\d+: warning: .*$").unwrap();
-        static ref re_noise: Regex = Regex::new(r"(?m)^\[\d+/\d+\]").unwrap();
+        static ref re_subject: Regex = Regex::new(r"^\S+:\d+:\d+: warning: .*$").unwrap();
+        static ref re_noise: Regex = Regex::new(r"^\[\d+/\d+\]").unwrap();
     }
     let mut captures = Vec::new();
-    let mut offset = 0;
-    while let Some(match_subject) = re_subject.find_at(&haystack, offset) {
-        // body extends from end of head to end of file, start of noise, or
-        // start of next head, whichever comes first
-        offset = match_subject.end();
-        let a = re_subject
-            .find_at(&haystack, offset)
-            .map_or(haystack.len(), |m| m.start());
-        let b = re_noise
-            .find_at(&haystack, offset)
-            .map_or(haystack.len(), |m| m.start());
-        let body_end = a.min(b);
-
-        captures.push(Captures {
-            head: &haystack[match_subject.start()..match_subject.end()],
-            body: &haystack[match_subject.end()..body_end]
-                .trim_start_matches(|c| c == '\n')
-                .trim_end_matches(|c| c == '\n'),
-        });
-
-        offset = body_end;
+    let mut current: Option<Captures> = None;
+    for line in haystack.lines() {
+        if re_subject.is_match(line) {
+            if current.is_some() {
+                captures.push(current.take().unwrap());
+            }
+            current = Some(Captures {
+                head: line,
+                body: vec![],
+            });
+            continue;
+        }
+        if re_noise.is_match(line) {
+            if current.is_some() {
+                captures.push(current.take().unwrap());
+            }
+            continue;
+        }
+        if current.is_some() {
+            let mut c = current.unwrap();
+            c.body.push(line);
+            current = Some(c);
+            continue;
+        }
+    }
+    if current.is_some() {
+        captures.push(current.unwrap());
     }
     captures
 }
@@ -118,7 +124,7 @@ mod tests {
         assert_eq!(captures.len(), 1);
         let c = &captures[0];
         assert_eq!(c.head, "foo.c:10:20: warning: bar");
-        assert_eq!(c.body, "");
+        assert_eq!(c.body, Vec::<&str>::new());
     }
 
     #[test]
@@ -127,7 +133,7 @@ mod tests {
         assert_eq!(captures.len(), 1);
         let c = &captures[0];
         assert_eq!(c.head, "foo.c:10:20: warning: bar");
-        assert_eq!(c.body, "body line 1\nbody line 2");
+        assert_eq!(c.body, vec!["body line 1", "body line 2"]);
     }
 
     #[test]
@@ -139,11 +145,11 @@ mod tests {
 
         let c = &captures[0];
         assert_eq!(c.head, "foo.c:10:20: warning: bar");
-        assert_eq!(c.body, "foo 1");
+        assert_eq!(c.body, vec!["foo 1"]);
 
         let c = &captures[1];
         assert_eq!(c.head, "bar.c:30:40: warning: foo");
-        assert_eq!(c.body, "bar 1");
+        assert_eq!(c.body, vec!["bar 1"]);
     }
 
     #[test]
@@ -152,7 +158,7 @@ mod tests {
         assert_eq!(captures.len(), 1);
         let c = &captures[0];
         assert_eq!(c.head, "foo.c:10:20: warning: bar");
-        assert_eq!(c.body, "");
+        assert_eq!(c.body, Vec::<&str>::new());
     }
 
     #[test]
@@ -165,7 +171,10 @@ mod tests {
         assert_eq!(c.head, "frameworks/base/packages/EasterEgg/src/com/android/egg/paint/CutoutAvoidingToolbar.kt:85:22: warning: parameter 'attrs' is never used");
         assert_eq!(
             c.body,
-            "    private fun init(attrs: AttributeSet?, defStyle: Int) {\n                     ^"
+            vec![
+                "    private fun init(attrs: AttributeSet?, defStyle: Int) {",
+                "                     ^"
+            ]
         );
     }
 
