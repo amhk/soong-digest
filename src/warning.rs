@@ -1,5 +1,6 @@
 use crate::ansi::strip_ansi_escape;
 use crate::item::Item;
+use lazy_static::lazy_static;
 use regex::Regex;
 use std::error::Error;
 
@@ -23,7 +24,9 @@ struct Captures<'h> {
 impl<'h> Captures<'h> {
     // switch to std::convert::TryFrom once that becomes stable
     fn try_from(&self) -> Result<Item, Box<Error>> {
-        let re = Regex::new(r"(\S+):(\d+):(\d+): warning: (.*)").unwrap();
+        lazy_static! {
+            static ref re: Regex = Regex::new(r"(\S+):(\d+):(\d+): warning: (.*)").unwrap();
+        }
 
         let caps = match re.captures(&self.head) {
             Some(caps) => caps,
@@ -60,8 +63,10 @@ impl<'h> Captures<'h> {
 }
 
 fn find_captures(haystack: &str) -> Vec<Captures> {
-    let re_subject = Regex::new(r"(?m)^\S+:\d+:\d+: warning: .*$").unwrap();
-    let re_noise = Regex::new(r"(?m)^\[\d+/\d+\]").unwrap();
+    lazy_static! {
+        static ref re_subject: Regex = Regex::new(r"(?m)^\S+:\d+:\d+: warning: .*$").unwrap();
+        static ref re_noise: Regex = Regex::new(r"(?m)^\[\d+/\d+\]").unwrap();
+    }
     let mut captures = Vec::new();
     let mut offset = 0;
     while let Some(match_subject) = re_subject.find_at(&haystack, offset) {
