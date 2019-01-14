@@ -26,8 +26,11 @@ struct Opt {
     warnings: Option<PathBuf>,
 }
 
-fn display_items(items: &[Item]) {
-    for item in items {
+fn display_items<I>(iter: I)
+where
+    I: IntoIterator<Item = Item>,
+{
+    for item in iter {
         println!("{:?}", item);
     }
 }
@@ -37,8 +40,8 @@ fn main() {
 
     if opt.errors.is_some() {
         let contents = std::fs::read_to_string(opt.errors.unwrap()).expect("failed to read file");
-        let items = error::parse(&contents).expect("failed to parse file");
-        display_items(&items);
+        let iter = error::parse(&contents).expect("failed to parse file");
+        display_items(iter);
     }
 
     if opt.warnings.is_some() {
@@ -48,7 +51,7 @@ fn main() {
         decoder
             .read_to_string(&mut contents)
             .expect("failed to decode file");
-        let items = warning::parse(&contents).expect("failed to parse file");
-        display_items(&items);
+        let iter = warning::parse(&contents).expect("failed to parse file");
+        display_items(iter);
     }
 }
