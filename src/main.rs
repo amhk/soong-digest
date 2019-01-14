@@ -2,6 +2,7 @@ use flate2::read::GzDecoder;
 use std::io::prelude::*;
 use std::path::PathBuf;
 use structopt::StructOpt;
+use termcolor::ColorChoice;
 
 mod ansi;
 mod error;
@@ -10,20 +11,39 @@ mod warning;
 
 use crate::item::Item;
 
+fn try_parse_color_choice(s: &str) -> Result<ColorChoice, &str> {
+    match s {
+        "auto" => Ok(ColorChoice::Auto),
+        "always" => Ok(ColorChoice::Always),
+        "never" => Ok(ColorChoice::Never),
+        _ => Err("unknown value"),
+    }
+}
+
 #[derive(StructOpt, Debug)]
 #[structopt(name = "soong-digest")]
 struct Opt {
     #[structopt(long = "errors", parse(from_os_str))]
     /// Path to errors file
     ///
-    /// Typically $ANDROID_ROOT/out/build.log
+    /// Typically $ANDROID_ROOT/out/build.log.
     errors: Option<PathBuf>,
 
     #[structopt(long = "warnings", parse(from_os_str))]
     /// Path to warnings file
     ///
-    /// Typically $ANDROID_ROOT/out/verbose.log.gz
+    /// Typically $ANDROID_ROOT/out/verbose.log.gz.
     warnings: Option<PathBuf>,
+
+    #[structopt(
+        long = "color",
+        default_value = "auto",
+        parse(try_from_str = "try_parse_color_choice")
+    )]
+    /// If and when to use color
+    ///
+    /// Valid values are: auto, always, never.
+    color_choice: ColorChoice,
 }
 
 fn display_items<I>(iter: I)
