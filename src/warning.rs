@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::error::Error;
 
-pub fn parse(haystack: &str) -> Result<Vec<Item>, Box<Error>> {
+pub fn parse<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> + 'b, Box<Error>> {
     let mut items: Vec<Item> = Vec::new();
     let captures = find_captures(haystack);
     for c in captures {
@@ -13,7 +13,7 @@ pub fn parse(haystack: &str) -> Result<Vec<Item>, Box<Error>> {
             Err(e) => return Err(e),
         }
     }
-    Ok(items)
+    Ok(items.into_iter())
 }
 
 struct Captures<'h> {
@@ -181,7 +181,8 @@ mod tests {
     #[test]
     fn test_parse() {
         let items = super::parse("[1/2] foo\nfoo.c:10:20: warning: bar\nbody 1\nbody 2\n[2/2] bar")
-            .unwrap();
+            .unwrap()
+            .collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
 
         let item = &items[0];
@@ -195,7 +196,7 @@ mod tests {
     #[test]
     fn test_parse_actual_soong_output() {
         let contents = uncompress_test_data();
-        let items = super::parse(&contents).unwrap();
+        let items = super::parse(&contents).unwrap().collect::<Vec<_>>();
         assert_eq!(items.len(), 9);
 
         let item = &items[0];

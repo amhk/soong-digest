@@ -3,7 +3,7 @@ use crate::item::Item;
 use regex::Regex;
 use std::error::Error;
 
-pub fn parse(haystack: &str) -> Result<Vec<Item>, Box<Error>> {
+pub fn parse<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> + 'b, Box<Error>> {
     let mut items: Vec<Item> = Vec::new();
     let captures = find_captures(haystack);
     for c in captures {
@@ -12,7 +12,7 @@ pub fn parse(haystack: &str) -> Result<Vec<Item>, Box<Error>> {
             Err(e) => return Err(e),
         }
     }
-    Ok(items)
+    Ok(items.into_iter())
 }
 
 struct Captures<'h> {
@@ -116,7 +116,7 @@ mod tests {
     #[test]
     fn test_parse_with_column() {
         let haystack = include_str!("../tests/data/idmap-errors/error.log");
-        let items = super::parse(&haystack).unwrap();
+        let items = super::parse(&haystack).unwrap().collect::<Vec<_>>();
         assert_eq!(items.len(), 2);
         let i = &items[0];
         assert_eq!(i.path, "frameworks/base/cmds/idmap/idmap.cpp");
@@ -129,7 +129,7 @@ mod tests {
     #[test]
     fn test_parse_without_column() {
         let haystack = include_str!("../tests/data/easter-egg-errors-java/error.log");
-        let items = super::parse(&haystack).unwrap();
+        let items = super::parse(&haystack).unwrap().collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
         let i = &items[0];
         assert_eq!(
