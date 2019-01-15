@@ -2,18 +2,16 @@ use crate::ansi::strip_ansi_escape;
 use crate::item::Item;
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::error::Error;
+use std::convert::From;
 
-pub fn parse<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> + 'b, Box<Error>> {
+pub fn parse<'a, 'b>(haystack: &'a str) -> impl Iterator<Item = Item> + 'b {
     let mut items: Vec<Item> = Vec::new();
-    let captures = find_captures(haystack);
+    let haystack = strip_ansi_escape(haystack);
+    let captures = find_captures(&haystack);
     for c in captures {
-        match c.try_from() {
-            Ok(item) => items.push(item),
-            Err(e) => return Err(e),
-        }
+        items.push(Item::from(c));
     }
-    Ok(items.into_iter())
+    items.into_iter()
 }
 
 struct Captures<'h> {
@@ -21,44 +19,19 @@ struct Captures<'h> {
     body: Vec<&'h str>,
 }
 
-impl<'h> Captures<'h> {
-    // switch to std::convert::TryFrom once that becomes stable
-    fn try_from(&self) -> Result<Item, Box<Error>> {
+impl<'h> From<Captures<'h>> for Item {
+    fn from(captures: Captures<'h>) -> Self {
         lazy_static! {
             static ref re: Regex = Regex::new(r"(\S+):(\d+):(\d+): warning: (.*)").unwrap();
         }
-
-        let caps = match re.captures(&self.head) {
-            Some(caps) => caps,
-            None => return Err(From::from(format!("failed to parse '{}'", self.head))),
-        };
-        let line_str = caps.get(2).unwrap().as_str();
-        let line = match line_str.parse() {
-            Ok(line) => line,
-            Err(_) => {
-                return Err(From::from(format!(
-                    "failed to convert '{}' to int",
-                    line_str
-                )))
-            }
-        };
-        let column_str = caps.get(3).unwrap().as_str();
-        let column = match column_str.parse() {
-            Ok(i) => Some(i),
-            Err(_) => {
-                return Err(From::from(format!(
-                    "failed to convert '{}' to int",
-                    column_str
-                )))
-            }
-        };
-        Ok(Item {
-            path: strip_ansi_escape(caps.get(1).unwrap().as_str()),
-            line,
-            column,
-            subject: strip_ansi_escape(caps.get(4).unwrap().as_str()),
-            body: strip_ansi_escape(&self.body.join("\n")),
-        })
+        let caps = re.captures(&captures.head).unwrap();
+        Item {
+            path: caps.get(1).unwrap().as_str().to_string(),
+            line: caps.get(2).unwrap().as_str().parse().unwrap(),
+            column: Some(caps.get(3).unwrap().as_str().parse().unwrap()),
+            subject: caps.get(4).unwrap().as_str().to_string(),
+            body: captures.body.join("\n"),
+        }
     }
 }
 
@@ -181,7 +154,6 @@ mod tests {
     #[test]
     fn test_parse() {
         let items = super::parse("[1/2] foo\nfoo.c:10:20: warning: bar\nbody 1\nbody 2\n[2/2] bar")
-            .unwrap()
             .collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
 
@@ -196,7 +168,7 @@ mod tests {
     #[test]
     fn test_parse_actual_soong_output() {
         let contents = uncompress_test_data();
-        let items = super::parse(&contents).unwrap().collect::<Vec<_>>();
+        let items = super::parse(&contents).collect::<Vec<_>>();
         assert_eq!(items.len(), 9);
 
         let item = &items[0];
