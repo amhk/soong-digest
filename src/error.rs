@@ -1,5 +1,6 @@
 use crate::ansi::strip_ansi_escape;
 use crate::item::Item;
+use lazy_static::lazy_static;
 use regex::Regex;
 use std::error::Error;
 
@@ -26,10 +27,13 @@ struct Captures<'h> {
 impl<'h> Captures<'h> {
     // switch to std::convert::TryFrom once that becomes stable
     fn try_from(&self) -> Result<Item, Box<Error>> {
-        let re_with_column =
-            Regex::new(r"(?P<path>\S+):(?P<line>\d+):(?P<column>\d+): (?P<subject>.*)").unwrap();
-        let re_without_column =
-            Regex::new(r"(?P<path>\S+):(?P<line>\d+): (?P<subject>.*)").unwrap();
+        lazy_static! {
+            static ref re_with_column: Regex =
+                Regex::new(r"(?P<path>\S+):(?P<line>\d+):(?P<column>\d+): (?P<subject>.*)")
+                    .unwrap();
+            static ref re_without_column: Regex =
+                Regex::new(r"(?P<path>\S+):(?P<line>\d+): (?P<subject>.*)").unwrap();
+        }
         let caps = match re_with_column.captures(self.output) {
             Some(caps) => caps,
             None => match re_without_column.captures(self.output) {
@@ -75,14 +79,16 @@ impl<'h> Captures<'h> {
 }
 
 fn find_captures(haystack: &str) -> Vec<Captures> {
-    let re = Regex::new(
-        "(?m)^FAILED: (.*)\n\
-         Outputs: (.*)\n\
-         Error: (.*)\n\
-         Command: (.*)\n\
-         Output:\n(?s)(.*?)\n\n",
-    )
-    .unwrap();
+    lazy_static! {
+        static ref re: Regex = Regex::new(
+            "(?m)^FAILED: (.*)\n\
+             Outputs: (.*)\n\
+             Error: (.*)\n\
+             Command: (.*)\n\
+             Output:\n(?s)(.*?)\n\n",
+        )
+        .unwrap();
+    }
     let mut captures = Vec::new();
     re.captures_iter(haystack).for_each(|caps| {
         let e = Captures {
