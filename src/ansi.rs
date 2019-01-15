@@ -1,7 +1,10 @@
+use lazy_static::lazy_static;
 use regex::Regex;
 
 pub fn strip_ansi_escape(input: &str) -> String {
-    let re = Regex::new(r"\u{1b}\[\d+(;\d+)*m").unwrap();
+    lazy_static! {
+        static ref re: Regex = Regex::new(r"\u{1b}\[\d+(;\d+)*m").unwrap();
+    }
     re.replace_all(input, "").to_string()
 }
 
