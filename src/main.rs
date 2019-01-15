@@ -51,7 +51,7 @@ fn main() {
         decoder
             .read_to_string(&mut contents)
             .expect("failed to decode file");
-        let iter = warning::parse(&contents).expect("failed to parse file");
+        let iter = warning::parse(&contents);
         display_items(iter);
     }
 }
