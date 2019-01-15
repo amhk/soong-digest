@@ -40,7 +40,7 @@ fn main() {
 
     if opt.errors.is_some() {
         let contents = std::fs::read_to_string(opt.errors.unwrap()).expect("failed to read file");
-        let iter = error::parse(&contents).expect("failed to parse file");
+        let iter = error::parse(&contents);
         display_items(iter);
     }
 
