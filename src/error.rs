@@ -1,5 +1,5 @@
 use crate::ansi::strip_ansi_escape;
-use crate::item::Item;
+use crate::item::{Item, ItemType};
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -97,6 +97,7 @@ fn parse_output<'a, 'b>(haystack: &'a str) -> impl Iterator<Item = Item> + 'b {
             column: ii.column.map(|x| x.parse().unwrap()),
             subject: ii.subject.to_string(),
             body: ii.body.join("\n"),
+            type_: ItemType::Error,
         });
     }
     out.into_iter()

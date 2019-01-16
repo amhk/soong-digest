@@ -1,5 +1,5 @@
 use crate::ansi::strip_ansi_escape;
-use crate::item::Item;
+use crate::item::{Item, ItemType};
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::convert::From;
@@ -31,6 +31,7 @@ impl<'h> From<Captures<'h>> for Item {
             column: Some(caps.get(3).unwrap().as_str().parse().unwrap()),
             subject: caps.get(4).unwrap().as_str().to_string(),
             body: captures.body.join("\n"),
+            type_: ItemType::Warning,
         }
     }
 }
