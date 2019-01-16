@@ -1,7 +1,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::env;
 use std::process::{Command, Output};
-use std::time::Duration;
 
 fn exec(arg: &str) -> Output {
     let root = env::current_exe().unwrap().parent().unwrap().to_path_buf();
@@ -27,9 +26,5 @@ fn bench_warnings(c: &mut Criterion) {
     });
 }
 
-criterion_group! {
-    name = benches;
-    config = Criterion::default().sample_size(10).measurement_time(Duration::new(10, 0));
-    targets = bench_errors, bench_warnings
-}
+criterion_group!(benches, bench_errors, bench_warnings);
 criterion_main!(benches);
