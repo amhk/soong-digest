@@ -26,6 +26,9 @@ fn test_parse_all_error_data() {
 
     let o5 = exec("--errors=tests/data/idmap-errors/error.log");
     assert!(o5.status.success());
+
+    let o6 = exec("--errors=tests/data/idmap-identical-errors/error.log");
+    assert!(o6.status.success());
 }
 
 #[test]
@@ -38,6 +41,9 @@ fn test_parse_quick_warning_data() {
 
     let o2 = exec("--warnings=tests/data/easter-egg-errors-java/verbose.log.gz");
     assert!(o2.status.success());
+
+    let o3 = exec("--warnings=tests/data/idmap-identical-errors/verbose.log.gz");
+    assert!(o3.status.success());
 }
 
 #[test]
