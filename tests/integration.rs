@@ -9,52 +9,58 @@ fn exec(arg: &str) -> Output {
 
 #[test]
 fn test_parse_all_error_data() {
-    let o0 = exec("--errors=this-does-not-exist");
-    assert!(!o0.status.success());
+    let o = exec("--errors=this-does-not-exist");
+    assert!(!o.status.success());
 
-    let o1 = exec("--errors=tests/data/easter-egg-errors-kt/error.log");
-    assert!(o1.status.success());
+    let o = exec("--errors=tests/data/easter-egg-errors-kt/error.log");
+    assert!(o.status.success());
 
-    let o2 = exec("--errors=tests/data/easter-egg-errors-java/error.log");
-    assert!(o2.status.success());
+    let o = exec("--errors=tests/data/easter-egg-errors-java/error.log");
+    assert!(o.status.success());
 
-    let o3 = exec("--errors=tests/data/idmap-warnings/error.log");
-    assert!(o3.status.success());
+    let o = exec("--errors=tests/data/idmap-warnings/error.log");
+    assert!(o.status.success());
 
-    let o4 = exec("--errors=tests/data/idmap-both-errors-and-warnings/error.log");
-    assert!(o4.status.success());
+    let o = exec("--errors=tests/data/idmap-both-errors-and-warnings/error.log");
+    assert!(o.status.success());
 
-    let o5 = exec("--errors=tests/data/idmap-errors/error.log");
-    assert!(o5.status.success());
+    let o = exec("--errors=tests/data/idmap-errors/error.log");
+    assert!(o.status.success());
 
-    let o6 = exec("--errors=tests/data/idmap-identical-errors/error.log");
-    assert!(o6.status.success());
+    let o = exec("--errors=tests/data/idmap-identical-errors/error.log");
+    assert!(o.status.success());
+
+    let o = exec("--errors=tests/data/idmap-fatal-errors/error.log");
+    assert!(o.status.success());
 }
 
 #[test]
 fn test_parse_quick_warning_data() {
-    let o0 = exec("--warnings=this-does-not-exist");
-    assert!(!o0.status.success());
+    let o = exec("--warnings=this-does-not-exist");
+    assert!(!o.status.success());
 
-    let o1 = exec("--warnings=tests/data/easter-egg-errors-kt/verbose.log.gz");
-    assert!(o1.status.success());
+    let o = exec("--warnings=tests/data/easter-egg-errors-kt/verbose.log.gz");
+    assert!(o.status.success());
 
-    let o2 = exec("--warnings=tests/data/easter-egg-errors-java/verbose.log.gz");
-    assert!(o2.status.success());
+    let o = exec("--warnings=tests/data/easter-egg-errors-java/verbose.log.gz");
+    assert!(o.status.success());
 
-    let o3 = exec("--warnings=tests/data/idmap-identical-errors/verbose.log.gz");
-    assert!(o3.status.success());
+    let o = exec("--warnings=tests/data/idmap-identical-errors/verbose.log.gz");
+    assert!(o.status.success());
+
+    let o = exec("--warnings=tests/data/idmap-fatal-errors/verbose.log.gz");
+    assert!(o.status.success());
 }
 
 #[test]
 #[ignore]
 fn test_parse_slow_warning_data() {
-    let o0 = exec("--warnings=tests/data/idmap-warnings/verbose.log.gz");
-    assert!(o0.status.success());
+    let o = exec("--warnings=tests/data/idmap-warnings/verbose.log.gz");
+    assert!(o.status.success());
 
-    let o1 = exec("--warnings=tests/data/idmap-both-errors-and-warnings/verbose.log.gz");
-    assert!(o1.status.success());
+    let o = exec("--warnings=tests/data/idmap-both-errors-and-warnings/verbose.log.gz");
+    assert!(o.status.success());
 
-    let o2 = exec("--warnings=tests/data/idmap-errors/verbose.log.gz");
-    assert!(o2.status.success());
+    let o = exec("--warnings=tests/data/idmap-errors/verbose.log.gz");
+    assert!(o.status.success());
 }

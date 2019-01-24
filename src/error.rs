@@ -40,8 +40,10 @@ fn parse_output<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> 
         body: Vec<&'a str>,
     };
     lazy_static! {
-        static ref re_with_col: Regex = Regex::new(r"^(\S+):(\d+):(\d+): error: (.*)").unwrap();
-        static ref re_without_col: Regex = Regex::new(r"^(\S+):(\d+): error: (.*)").unwrap();
+        static ref re_with_col: Regex =
+            Regex::new(r"^(\S+):(\d+):(\d+): (?:fatal )?error: (.*)").unwrap();
+        static ref re_without_col: Regex =
+            Regex::new(r"^(\S+):(\d+): (?:fatal )?error: (.*)").unwrap();
         static ref re_errors_generated: Regex = Regex::new(r"^\d+ errors? generated\.$").unwrap();
         static ref re_errors: Regex = Regex::new(r"^\d+ errors?$").unwrap();
     }
@@ -228,6 +230,23 @@ mod tests {
         assert_eq!(i.column, Some(13));
         assert_eq!(i.subject, "no matching function for call to 'lseek'");
         assert_eq!(i.body, "        if (lseek(idmap_fd, 0) < 0) {\n            ^~~~~\nbionic/libc/include/unistd.h:258:7: note: candidate function not viable: requires 3 arguments, but 2 were provided\noff_t lseek(int __fd, off_t __offset, int __whence);\n      ^");
+    }
+
+    #[test]
+    fn test_parse_cpp_fatal_errors() {
+        let haystack = include_str!("../tests/data/idmap-fatal-errors/error.log");
+        let items = super::parse(&haystack).unwrap().collect::<Vec<_>>();
+        assert_eq!(items.len(), 1);
+
+        let i = &items[0];
+        assert_eq!(i.path, "frameworks/base/cmds/idmap/create.cpp");
+        assert_eq!(i.line, 2);
+        assert_eq!(i.column, Some(10));
+        assert_eq!(i.subject, "'does-not-exist.h' file not found");
+        assert_eq!(
+            i.body,
+            "#include \"does-not-exist.h\"\n         ^~~~~~~~~~~~~~~~~~"
+        );
     }
 
     #[test]
