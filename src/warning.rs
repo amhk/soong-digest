@@ -27,10 +27,13 @@ impl<'h> From<Captures<'h>> for Item {
         let caps = re.captures(&captures.head).unwrap();
         Item {
             path: caps.get(1).unwrap().as_str().to_string(),
-            line: caps.get(2).unwrap().as_str().parse().unwrap(),
+            line: Some(caps.get(2).unwrap().as_str().parse().unwrap()),
             column: Some(caps.get(3).unwrap().as_str().parse().unwrap()),
             subject: caps.get(4).unwrap().as_str().to_string(),
-            body: captures.body.join("\n"),
+            body: match captures.body.len() {
+                0 => None,
+                _ => Some(captures.body.join("\n")),
+            },
             type_: ItemType::Warning,
         }
     }
@@ -161,10 +164,10 @@ mod tests {
 
         let item = &items[0];
         assert_eq!(item.path, "foo.c");
-        assert_eq!(item.line, 10);
+        assert_eq!(item.line, Some(10));
         assert_eq!(item.column, Some(20));
         assert_eq!(item.subject, "bar");
-        assert_eq!(item.body, "body 1\nbody 2");
+        assert_eq!(item.body, Some("body 1\nbody 2".to_string()));
     }
 
     #[test]
@@ -178,12 +181,12 @@ mod tests {
             item.path,
             "frameworks/base/packages/EasterEgg/src/com/android/egg/paint/CutoutAvoidingToolbar.kt"
         );
-        assert_eq!(item.line, 85);
+        assert_eq!(item.line, Some(85));
         assert_eq!(item.column, Some(22));
         assert_eq!(item.subject, "parameter 'attrs' is never used");
         assert_eq!(
             item.body,
-            "    private fun init(attrs: AttributeSet?, defStyle: Int) {\n                     ^"
+            Some("    private fun init(attrs: AttributeSet?, defStyle: Int) {\n                     ^".to_string())
         );
     }
 }

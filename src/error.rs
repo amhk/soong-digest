@@ -34,7 +34,7 @@ fn parse_output<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> 
     #[derive(Debug)]
     struct InternalItem<'a> {
         path: &'a str,
-        line: &'a str,
+        line: Option<&'a str>,
         column: Option<&'a str>,
         subject: &'a str,
         body: Vec<&'a str>,
@@ -64,7 +64,7 @@ fn parse_output<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> 
             }
             current = Some(InternalItem {
                 path: caps.get(1).unwrap().as_str(),
-                line: caps.get(2).unwrap().as_str(),
+                line: Some(caps.get(2).unwrap().as_str()),
                 column: Some(caps.get(3).unwrap().as_str()),
                 subject: caps.get(4).unwrap().as_str(),
                 body: vec![],
@@ -80,7 +80,7 @@ fn parse_output<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> 
             }
             current = Some(InternalItem {
                 path: caps.get(1).unwrap().as_str(),
-                line: caps.get(2).unwrap().as_str(),
+                line: Some(caps.get(2).unwrap().as_str()),
                 column: None,
                 subject: caps.get(3).unwrap().as_str(),
                 body: vec![],
@@ -103,10 +103,13 @@ fn parse_output<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> 
     for ii in internal_items {
         out.push(Item {
             path: ii.path.to_string(),
-            line: ii.line.parse().unwrap(),
+            line: ii.line.map(|x| x.parse().unwrap()),
             column: ii.column.map(|x| x.parse().unwrap()),
             subject: ii.subject.to_string(),
-            body: ii.body.join("\n"),
+            body: match ii.body.len() {
+                0 => None,
+                _ => Some(ii.body.join("\n")),
+            },
             type_: ItemType::Error,
         });
     }
@@ -129,30 +132,30 @@ mod tests {
             i.path,
             "frameworks/base/packages/EasterEgg/src/com/android/egg/paint/PaintActivity.java"
         );
-        assert_eq!(i.line, 228);
+        assert_eq!(i.line, Some(228));
         assert_eq!(i.column, None);
         assert_eq!(i.subject, "cannot find symbol");
-        assert_eq!(i.body, "            for (int i = 0; i < NUM_BRUSHES; i++) {\n                                ^\n  symbol:   variable NUM_BRUSHES\n  location: class PaintActivity");
+        assert_eq!(i.body, Some("            for (int i = 0; i < NUM_BRUSHES; i++) {\n                                ^\n  symbol:   variable NUM_BRUSHES\n  location: class PaintActivity".to_string()));
 
         let i = &items[1];
         assert_eq!(
             i.path,
             "frameworks/base/packages/EasterEgg/src/com/android/egg/paint/PaintActivity.java"
         );
-        assert_eq!(i.line, 233);
+        assert_eq!(i.line, Some(233));
         assert_eq!(i.column, None);
         assert_eq!(i.subject, "cannot find symbol");
-        assert_eq!(i.body, "                        (float) Math.pow((float) i / NUM_BRUSHES, 2f), minBrushWidth,\n                                                     ^\n  symbol:   variable NUM_BRUSHES\n  location: class PaintActivity");
+        assert_eq!(i.body, Some("                        (float) Math.pow((float) i / NUM_BRUSHES, 2f), minBrushWidth,\n                                                     ^\n  symbol:   variable NUM_BRUSHES\n  location: class PaintActivity".to_string()));
 
         let i = &items[2];
         assert_eq!(
             i.path,
             "frameworks/base/packages/EasterEgg/src/com/android/egg/paint/PaintActivity.java"
         );
-        assert_eq!(i.line, 311);
+        assert_eq!(i.line, Some(311));
         assert_eq!(i.column, None);
         assert_eq!(i.subject, "cannot find symbol");
-        assert_eq!(i.body, "        thisDoesNotExist();\n        ^\n  symbol:   method thisDoesNotExist()\n  location: class PaintActivity");
+        assert_eq!(i.body, Some("        thisDoesNotExist();\n        ^\n  symbol:   method thisDoesNotExist()\n  location: class PaintActivity".to_string()));
     }
 
     #[test]
@@ -166,17 +169,20 @@ mod tests {
             i.path,
             "frameworks/base/packages/EasterEgg/src/com/android/egg/paint/CutoutAvoidingToolbar.kt"
         );
-        assert_eq!(i.line, 48);
+        assert_eq!(i.line, Some(48));
         assert_eq!(i.column, Some(9));
         assert_eq!(i.subject, "unresolved reference: thisDoesNotExist");
-        assert_eq!(i.body, "        thisDoesNotExist()\n        ^");
+        assert_eq!(
+            i.body,
+            Some("        thisDoesNotExist()\n        ^".to_string())
+        );
 
         let i = &items[1];
         assert_eq!(
             i.path,
             "frameworks/base/packages/EasterEgg/src/com/android/egg/paint/CutoutAvoidingToolbar.kt"
         );
-        assert_eq!(i.line, 65);
+        assert_eq!(i.line, Some(65));
         assert_eq!(i.column, Some(35));
         assert_eq!(
             i.subject,
@@ -184,7 +190,10 @@ mod tests {
         );
         assert_eq!(
             i.body,
-            "                    cutoutRight = r.width()\n                                  ^"
+            Some(
+                "                    cutoutRight = r.width()\n                                  ^"
+                    .to_string()
+            )
         );
 
         let i = &items[2];
@@ -192,13 +201,13 @@ mod tests {
             i.path,
             "frameworks/base/packages/EasterEgg/src/com/android/egg/paint/CutoutAvoidingToolbar.kt"
         );
-        assert_eq!(i.line, 79);
+        assert_eq!(i.line, Some(79));
         assert_eq!(i.column, Some(35));
         assert_eq!(
             i.subject,
             "none of the following functions can be called with the arguments supplied: "
         );
-        assert_eq!(i.body, "public constructor LayoutParams(c: Context!, attrs: AttributeSet!) defined in android.widget.LinearLayout.LayoutParams\npublic constructor LayoutParams(width: Int, height: Int) defined in android.widget.LinearLayout.LayoutParams\n                it.layoutParams = LayoutParams(cutoutRight, MATCH_PARENT)\n                                  ^");
+        assert_eq!(i.body, Some("public constructor LayoutParams(c: Context!, attrs: AttributeSet!) defined in android.widget.LinearLayout.LayoutParams\npublic constructor LayoutParams(width: Int, height: Int) defined in android.widget.LinearLayout.LayoutParams\n                it.layoutParams = LayoutParams(cutoutRight, MATCH_PARENT)\n                                  ^".to_string()));
     }
 
     #[test]
@@ -209,27 +218,27 @@ mod tests {
 
         let i = &items[0];
         assert_eq!(i.path, "frameworks/base/cmds/idmap/idmap.cpp");
-        assert_eq!(i.line, 234);
+        assert_eq!(i.line, Some(234));
         assert_eq!(i.column, Some(5));
         assert_eq!(
             i.subject,
             "control may reach end of non-void function [-Werror,-Wreturn-type]"
         );
-        assert_eq!(i.body, "    }\n    ^");
+        assert_eq!(i.body, Some("    }\n    ^".to_string()));
 
         let i = &items[1];
         assert_eq!(i.path, "frameworks/base/cmds/idmap/create.cpp");
-        assert_eq!(i.line, 29);
+        assert_eq!(i.line, Some(29));
         assert_eq!(i.column, Some(33));
         assert_eq!(i.subject, "expected ';' after expression");
-        assert_eq!(i.body, "        zip->releaseEntry(entry)\n                                ^\n                                ;");
+        assert_eq!(i.body, Some("        zip->releaseEntry(entry)\n                                ^\n                                ;".to_string()));
 
         let i = &items[2];
         assert_eq!(i.path, "frameworks/base/cmds/idmap/create.cpp");
-        assert_eq!(i.line, 89);
+        assert_eq!(i.line, Some(89));
         assert_eq!(i.column, Some(13));
         assert_eq!(i.subject, "no matching function for call to 'lseek'");
-        assert_eq!(i.body, "        if (lseek(idmap_fd, 0) < 0) {\n            ^~~~~\nbionic/libc/include/unistd.h:258:7: note: candidate function not viable: requires 3 arguments, but 2 were provided\noff_t lseek(int __fd, off_t __offset, int __whence);\n      ^");
+        assert_eq!(i.body, Some("        if (lseek(idmap_fd, 0) < 0) {\n            ^~~~~\nbionic/libc/include/unistd.h:258:7: note: candidate function not viable: requires 3 arguments, but 2 were provided\noff_t lseek(int __fd, off_t __offset, int __whence);\n      ^".to_string()));
     }
 
     #[test]
@@ -240,12 +249,12 @@ mod tests {
 
         let i = &items[0];
         assert_eq!(i.path, "frameworks/base/cmds/idmap/create.cpp");
-        assert_eq!(i.line, 2);
+        assert_eq!(i.line, Some(2));
         assert_eq!(i.column, Some(10));
         assert_eq!(i.subject, "'does-not-exist.h' file not found");
         assert_eq!(
             i.body,
-            "#include \"does-not-exist.h\"\n         ^~~~~~~~~~~~~~~~~~"
+            Some("#include \"does-not-exist.h\"\n         ^~~~~~~~~~~~~~~~~~".to_string())
         );
     }
 

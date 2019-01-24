@@ -10,10 +10,10 @@ pub enum ItemType {
 #[derive(Debug, PartialOrd, Ord)]
 pub struct Item {
     pub path: String,
-    pub line: usize,
+    pub line: Option<usize>,
     pub column: Option<usize>,
     pub subject: String,
-    pub body: String,
+    pub body: Option<String>,
     pub type_: ItemType,
 }
 
@@ -51,7 +51,10 @@ where
 
     for item in v {
         buffer.set_color(ColorSpec::new().set_bold(true))?;
-        write!(&mut buffer, "{}:{}:", item.path, item.line)?;
+        write!(&mut buffer, "{}:", item.path)?;
+        if item.line.is_some() {
+            write!(&mut buffer, "{}:", item.line.unwrap())?;
+        }
         if item.column.is_some() {
             write!(&mut buffer, "{}:", item.column.unwrap())?;
         }
@@ -67,7 +70,9 @@ where
         }
         buffer.set_color(&ColorSpec::new())?;
         writeln!(&mut buffer, "{}", item.subject)?;
-        writeln!(&mut buffer, "{}", item.body)?;
+        if item.body.is_some() {
+            writeln!(&mut buffer, "{}", item.body.unwrap())?;
+        }
     }
     Ok(())
 }
