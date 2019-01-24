@@ -3,7 +3,7 @@ use crate::item::{Item, ItemType};
 use lazy_static::lazy_static;
 use regex::Regex;
 
-pub fn parse<'a, 'b>(haystack: &'a str) -> impl Iterator<Item = Item> + 'b {
+pub fn parse<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> + 'b, String> {
     lazy_static! {
         static ref re: Regex = Regex::new(
             "(?m)^FAILED: .*\n\
@@ -15,14 +15,22 @@ pub fn parse<'a, 'b>(haystack: &'a str) -> impl Iterator<Item = Item> + 'b {
         .unwrap();
     }
     let mut items = vec![];
-    re.captures_iter(haystack).for_each(|caps| {
-        let mut iter = parse_output(caps.get(1).unwrap().as_str());
-        items.extend(&mut iter);
-    });
-    items.into_iter()
+    if haystack.is_empty() {
+        return Ok(items.into_iter());
+    }
+    re.captures_iter(haystack)
+        .try_for_each(|caps| -> Result<(), String> {
+            let mut iter = parse_output(caps.get(1).unwrap().as_str())?;
+            items.extend(&mut iter);
+            Ok(())
+        })?;
+    match items.len() {
+        0 => Err("failed to split input into blocks".to_string()),
+        _ => Ok(items.into_iter()),
+    }
 }
 
-fn parse_output<'a, 'b>(haystack: &'a str) -> impl Iterator<Item = Item> + 'b {
+fn parse_output<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> + 'b, String> {
     #[derive(Debug)]
     struct InternalItem<'a> {
         path: &'a str,
@@ -100,7 +108,10 @@ fn parse_output<'a, 'b>(haystack: &'a str) -> impl Iterator<Item = Item> + 'b {
             type_: ItemType::Error,
         });
     }
-    out.into_iter()
+    match out.len() {
+        0 => Err(format!("failed to parse block '{}'", &haystack)),
+        _ => Ok(out.into_iter()),
+    }
 }
 
 #[cfg(test)]
@@ -108,7 +119,7 @@ mod tests {
     #[test]
     fn test_parse_java_errors() {
         let haystack = include_str!("../tests/data/easter-egg-errors-java/error.log");
-        let items = super::parse(&haystack).collect::<Vec<_>>();
+        let items = super::parse(&haystack).unwrap().collect::<Vec<_>>();
         assert_eq!(items.len(), 3);
 
         let i = &items[0];
@@ -145,7 +156,7 @@ mod tests {
     #[test]
     fn test_parse_kotlin_errors() {
         let haystack = include_str!("../tests/data/easter-egg-errors-kt/error.log");
-        let items = super::parse(&haystack).collect::<Vec<_>>();
+        let items = super::parse(&haystack).unwrap().collect::<Vec<_>>();
         assert_eq!(items.len(), 3);
 
         let i = &items[0];
@@ -191,7 +202,7 @@ mod tests {
     #[test]
     fn test_parse_cpp_errors() {
         let haystack = include_str!("../tests/data/idmap-errors/error.log");
-        let items = super::parse(&haystack).collect::<Vec<_>>();
+        let items = super::parse(&haystack).unwrap().collect::<Vec<_>>();
         assert_eq!(items.len(), 3);
 
         let i = &items[0];
@@ -217,5 +228,38 @@ mod tests {
         assert_eq!(i.column, Some(13));
         assert_eq!(i.subject, "no matching function for call to 'lseek'");
         assert_eq!(i.body, "        if (lseek(idmap_fd, 0) < 0) {\n            ^~~~~\nbionic/libc/include/unistd.h:258:7: note: candidate function not viable: requires 3 arguments, but 2 were provided\noff_t lseek(int __fd, off_t __offset, int __whence);\n      ^");
+    }
+
+    #[test]
+    fn test_failure_to_parse_a_block() {
+        let haystack = "FAILED: some path\n\
+                        Outputs: some object\n\
+                        Error: some return value\n\
+                        Command: some command\n\
+                        Output:\n\
+                        some output not recognized by the parser\n\
+                        \n\
+                        \n";
+        let result = super::parse(&haystack);
+        assert!(result.is_err());
+        assert!(result.err().unwrap().contains("failed to parse block"));
+    }
+
+    #[test]
+    fn test_failure_to_parse_anything() {
+        let haystack = "foo";
+        let result = super::parse(&haystack);
+        assert!(result.is_err());
+        assert!(result
+            .err()
+            .unwrap()
+            .contains("failed to split input into blocks"));
+    }
+
+    #[test]
+    fn test_empty_input_is_ok() {
+        let haystack = "";
+        let items = super::parse(&haystack).unwrap();
+        assert_eq!(items.count(), 0);
     }
 }

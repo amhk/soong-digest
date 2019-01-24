@@ -51,7 +51,7 @@ fn main() {
 
     if opt.errors.is_some() {
         let contents = std::fs::read_to_string(opt.errors.unwrap()).expect("failed to read file");
-        let iter = error::parse(&contents);
+        let iter = error::parse(&contents).expect("failed to parse file");
         display_items(iter, opt.color_choice).expect("failed to display errors");
     }
 
@@ -62,7 +62,7 @@ fn main() {
         decoder
             .read_to_string(&mut contents)
             .expect("failed to decode file");
-        let iter = warning::parse(&contents);
+        let iter = warning::parse(&contents).expect("failed to parse file");
         display_items(iter, opt.color_choice).expect("failed to display warnings");
     }
 }

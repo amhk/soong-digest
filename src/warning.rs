@@ -4,14 +4,14 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::convert::From;
 
-pub fn parse<'a, 'b>(haystack: &'a str) -> impl Iterator<Item = Item> + 'b {
+pub fn parse<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> + 'b, String> {
     let mut items: Vec<Item> = Vec::new();
     let haystack = strip_ansi_escape(haystack);
     let captures = find_captures(&haystack);
     for c in captures {
         items.push(Item::from(c));
     }
-    items.into_iter()
+    Ok(items.into_iter())
 }
 
 struct Captures<'h> {
@@ -155,6 +155,7 @@ mod tests {
     #[test]
     fn test_parse() {
         let items = super::parse("[1/2] foo\nfoo.c:10:20: warning: bar\nbody 1\nbody 2\n[2/2] bar")
+            .unwrap()
             .collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
 
@@ -169,7 +170,7 @@ mod tests {
     #[test]
     fn test_parse_actual_soong_output() {
         let contents = uncompress_test_data();
-        let items = super::parse(&contents).collect::<Vec<_>>();
+        let items = super::parse(&contents).unwrap().collect::<Vec<_>>();
         assert_eq!(items.len(), 9);
 
         let item = &items[0];

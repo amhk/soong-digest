@@ -80,7 +80,7 @@ mod tests {
     #[test]
     fn test_group_identical_items() {
         let haystack = include_str!("../tests/data/idmap-identical-errors/error.log");
-        let items = error::parse(&haystack);
+        let items = error::parse(&haystack).unwrap();
         let writer = BufferWriter::stdout(ColorChoice::Never);
         let mut buffer = writer.buffer();
         super::fill_buffer(&mut buffer, items).unwrap();
