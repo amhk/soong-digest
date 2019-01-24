@@ -30,24 +30,25 @@ impl PartialEq for Item {
 
 impl Eq for Item {}
 
-pub fn display_items<I>(iter: I, color_choice: ColorChoice) -> std::io::Result<()>
+pub fn display_items<I>(iter: I, color_choice: ColorChoice) -> std::io::Result<usize>
 where
     I: Iterator<Item = Item>,
 {
     let writer = BufferWriter::stdout(color_choice);
     let mut buffer = writer.buffer();
-    fill_buffer(&mut buffer, iter)?;
+    let n = fill_buffer(&mut buffer, iter)?;
     writer.print(&buffer)?;
-    Ok(())
+    Ok(n)
 }
 
-fn fill_buffer<I>(mut buffer: &mut Buffer, iter: I) -> std::io::Result<()>
+fn fill_buffer<I>(mut buffer: &mut Buffer, iter: I) -> std::io::Result<usize>
 where
     I: Iterator<Item = Item>,
 {
     let mut v = iter.collect::<Vec<_>>();
     v.sort();
     v.dedup();
+    let total = v.len();
 
     for item in v {
         buffer.set_color(ColorSpec::new().set_bold(true))?;
@@ -74,7 +75,7 @@ where
             writeln!(&mut buffer, "{}", item.body.unwrap())?;
         }
     }
-    Ok(())
+    Ok(total)
 }
 
 #[cfg(test)]

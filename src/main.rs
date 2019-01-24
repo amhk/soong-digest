@@ -1,6 +1,7 @@
 use flate2::read::GzDecoder;
 use std::io::prelude::*;
 use std::path::PathBuf;
+use std::process::exit;
 use structopt::StructOpt;
 use termcolor::ColorChoice;
 
@@ -46,13 +47,14 @@ struct Opt {
     color_choice: ColorChoice,
 }
 
-fn main() {
+fn try_main() -> Result<usize, String> {
     let opt = Opt::from_args();
+    let mut total = 0;
 
     if opt.errors.is_some() {
         let contents = std::fs::read_to_string(opt.errors.unwrap()).expect("failed to read file");
         let iter = error::parse(&contents).expect("failed to parse file");
-        display_items(iter, opt.color_choice).expect("failed to display errors");
+        total += display_items(iter, opt.color_choice).expect("failed to display errors");
     }
 
     if opt.warnings.is_some() {
@@ -63,6 +65,19 @@ fn main() {
             .read_to_string(&mut contents)
             .expect("failed to decode file");
         let iter = warning::parse(&contents).expect("failed to parse file");
-        display_items(iter, opt.color_choice).expect("failed to display warnings");
+        total += display_items(iter, opt.color_choice).expect("failed to display warnings");
     }
+
+    Ok(total)
+}
+
+fn main() {
+    exit(match try_main() {
+        Ok(n) if n < 0xff => n as i32,
+        Ok(_) => 0xff,
+        Err(e) => {
+            eprintln!("{:?}", e);
+            1
+        }
+    });
 }

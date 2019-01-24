@@ -11,8 +11,7 @@ fn exec(arg: &str) -> Output {
 fn bench_errors(c: &mut Criterion) {
     c.bench_function("bench-errors", |b| {
         b.iter(|| {
-            let o = exec("--errors=tests/data/idmap-both-errors-and-warnings/error.log");
-            assert!(o.status.success());
+            exec("--errors=tests/data/idmap-both-errors-and-warnings/error.log");
         })
     });
 }
@@ -20,8 +19,7 @@ fn bench_errors(c: &mut Criterion) {
 fn bench_warnings(c: &mut Criterion) {
     c.bench_function("bench-warnings", |b| {
         b.iter(|| {
-            let o = exec("--warnings=tests/data/idmap-both-errors-and-warnings/verbose.log.gz");
-            assert!(o.status.success());
+            exec("--warnings=tests/data/idmap-both-errors-and-warnings/verbose.log.gz");
         })
     });
 }
