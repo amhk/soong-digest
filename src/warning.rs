@@ -4,14 +4,14 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::convert::From;
 
-pub fn parse<'a, 'b>(haystack: &'a str) -> impl Iterator<Item = Item> + 'b {
+pub fn parse<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> + 'b, String> {
     let mut items: Vec<Item> = Vec::new();
     let haystack = strip_ansi_escape(haystack);
     let captures = find_captures(&haystack);
     for c in captures {
         items.push(Item::from(c));
     }
-    items.into_iter()
+    Ok(items.into_iter())
 }
 
 struct Captures<'h> {
@@ -27,10 +27,13 @@ impl<'h> From<Captures<'h>> for Item {
         let caps = re.captures(&captures.head).unwrap();
         Item {
             path: caps.get(1).unwrap().as_str().to_string(),
-            line: caps.get(2).unwrap().as_str().parse().unwrap(),
+            line: Some(caps.get(2).unwrap().as_str().parse().unwrap()),
             column: Some(caps.get(3).unwrap().as_str().parse().unwrap()),
             subject: caps.get(4).unwrap().as_str().to_string(),
-            body: captures.body.join("\n"),
+            body: match captures.body.len() {
+                0 => None,
+                _ => Some(captures.body.join("\n")),
+            },
             type_: ItemType::Warning,
         }
     }
@@ -155,21 +158,22 @@ mod tests {
     #[test]
     fn test_parse() {
         let items = super::parse("[1/2] foo\nfoo.c:10:20: warning: bar\nbody 1\nbody 2\n[2/2] bar")
+            .unwrap()
             .collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
 
         let item = &items[0];
         assert_eq!(item.path, "foo.c");
-        assert_eq!(item.line, 10);
+        assert_eq!(item.line, Some(10));
         assert_eq!(item.column, Some(20));
         assert_eq!(item.subject, "bar");
-        assert_eq!(item.body, "body 1\nbody 2");
+        assert_eq!(item.body, Some("body 1\nbody 2".to_string()));
     }
 
     #[test]
     fn test_parse_actual_soong_output() {
         let contents = uncompress_test_data();
-        let items = super::parse(&contents).collect::<Vec<_>>();
+        let items = super::parse(&contents).unwrap().collect::<Vec<_>>();
         assert_eq!(items.len(), 9);
 
         let item = &items[0];
@@ -177,12 +181,12 @@ mod tests {
             item.path,
             "frameworks/base/packages/EasterEgg/src/com/android/egg/paint/CutoutAvoidingToolbar.kt"
         );
-        assert_eq!(item.line, 85);
+        assert_eq!(item.line, Some(85));
         assert_eq!(item.column, Some(22));
         assert_eq!(item.subject, "parameter 'attrs' is never used");
         assert_eq!(
             item.body,
-            "    private fun init(attrs: AttributeSet?, defStyle: Int) {\n                     ^"
+            Some("    private fun init(attrs: AttributeSet?, defStyle: Int) {\n                     ^".to_string())
         );
     }
 }
