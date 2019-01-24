@@ -40,10 +40,12 @@ fn parse_output<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> 
         body: Vec<&'a str>,
     };
     lazy_static! {
-        static ref re_with_col: Regex =
+        static ref re_line_col: Regex =
             Regex::new(r"^(\S+):(\d+):(\d+): (?:fatal )?error: (.*)").unwrap();
-        static ref re_without_col: Regex =
+        static ref re_line_no_col: Regex =
             Regex::new(r"^(\S+):(\d+): (?:fatal )?error: (.*)").unwrap();
+        static ref re_no_line_no_col: Regex =
+            Regex::new(r"^(\S+): (?:fatal )?error: (.*)").unwrap();
         static ref re_errors_generated: Regex = Regex::new(r"^\d+ errors? generated\.$").unwrap();
         static ref re_errors: Regex = Regex::new(r"^\d+ errors?$").unwrap();
     }
@@ -56,7 +58,7 @@ fn parse_output<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> 
         .filter(|line| !re_errors_generated.is_match(line))
         .filter(|line| !re_errors.is_match(line))
     {
-        let caps = re_with_col.captures(&line);
+        let caps = re_line_col.captures(&line);
         if caps.is_some() {
             let caps = caps.unwrap();
             if current.is_some() {
@@ -72,7 +74,7 @@ fn parse_output<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> 
             continue;
         }
 
-        let caps = re_without_col.captures(&line);
+        let caps = re_line_no_col.captures(&line);
         if caps.is_some() {
             let caps = caps.unwrap();
             if current.is_some() {
@@ -83,6 +85,22 @@ fn parse_output<'a, 'b>(haystack: &'a str) -> Result<impl Iterator<Item = Item> 
                 line: Some(caps.get(2).unwrap().as_str()),
                 column: None,
                 subject: caps.get(3).unwrap().as_str(),
+                body: vec![],
+            });
+            continue;
+        }
+
+        let caps = re_no_line_no_col.captures(&line);
+        if caps.is_some() {
+            let caps = caps.unwrap();
+            if current.is_some() {
+                internal_items.push(current.take().unwrap());
+            }
+            current = Some(InternalItem {
+                path: caps.get(1).unwrap().as_str(),
+                line: None,
+                column: None,
+                subject: caps.get(2).unwrap().as_str(),
                 body: vec![],
             });
             continue;
@@ -256,6 +274,36 @@ mod tests {
             i.body,
             Some("#include \"does-not-exist.h\"\n         ^~~~~~~~~~~~~~~~~~".to_string())
         );
+    }
+
+    #[test]
+    fn test_parse_cpp_linker_errors() {
+        let haystack = include_str!("../tests/data/idmap-linker-errors/error.log");
+        let items = super::parse(&haystack).unwrap().collect::<Vec<_>>();
+        assert_eq!(items.len(), 2);
+
+        let i = &items[0];
+        assert_eq!(i.path, "ld.lld");
+        assert_eq!(i.line, None);
+        assert_eq!(i.column, None);
+        assert_eq!(
+            i.subject,
+            "undefined symbol: idmap_create_fd(char const*, char const*, int)"
+        );
+        assert_eq!(
+            i.body,
+            Some(">>> referenced by idmap.cpp:150 (frameworks/base/cmds/idmap/idmap.cpp:150)\n>>>               out/soong/.intermediates/frameworks/base/cmds/idmap/idmap/android_x86_64_core/obj/frameworks/base/cmds/idmap/idmap.o:(main)".to_string())
+        );
+
+        let i = &items[1];
+        assert_eq!(i.path, "clang-8");
+        assert_eq!(i.line, None);
+        assert_eq!(i.column, None);
+        assert_eq!(
+            i.subject,
+            "linker command failed with exit code 1 (use -v to see invocation)"
+        );
+        assert_eq!(i.body, None);
     }
 
     #[test]

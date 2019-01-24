@@ -32,6 +32,9 @@ fn test_parse_all_error_data() {
 
     let o = exec("--errors=tests/data/idmap-fatal-errors/error.log");
     assert!(o.status.success());
+
+    let o = exec("--errors=tests/data/idmap-linker-errors/error.log");
+    assert!(o.status.success());
 }
 
 #[test]
@@ -49,6 +52,9 @@ fn test_parse_quick_warning_data() {
     assert!(o.status.success());
 
     let o = exec("--warnings=tests/data/idmap-fatal-errors/verbose.log.gz");
+    assert!(o.status.success());
+
+    let o = exec("--warnings=tests/data/idmap-linker-errors/verbose.log.gz");
     assert!(o.status.success());
 }
 
