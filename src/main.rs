@@ -73,7 +73,8 @@ fn try_main() -> Result<usize, String> {
     if opt.errors.is_some() {
         let contents = std::fs::read_to_string(opt.errors.unwrap()).expect("failed to read file");
         let iter = error::parse(&contents).expect("failed to parse file");
-        total += display_items(iter, opt.color_choice).expect("failed to display errors");
+        total += display_items(iter, opt.output_format, opt.color_choice)
+            .expect("failed to display errors");
     }
 
     if opt.warnings.is_some() {
@@ -84,7 +85,8 @@ fn try_main() -> Result<usize, String> {
             .read_to_string(&mut contents)
             .expect("failed to decode file");
         let iter = warning::parse(&contents).expect("failed to parse file");
-        total += display_items(iter, opt.color_choice).expect("failed to display warnings");
+        total += display_items(iter, opt.output_format, opt.color_choice)
+            .expect("failed to display warnings");
     }
 
     Ok(total)
