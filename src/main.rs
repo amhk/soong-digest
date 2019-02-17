@@ -8,9 +8,10 @@ use termcolor::ColorChoice;
 mod ansi;
 mod error;
 mod item;
+mod output;
 mod warning;
 
-use crate::item::display_items;
+use crate::output::display_items;
 
 fn try_parse_color_choice(s: &str) -> Result<ColorChoice, &str> {
     match s {
