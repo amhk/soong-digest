@@ -2,6 +2,12 @@ use crate::item::{Item, ItemType};
 use std::io::Write;
 use termcolor::{Buffer, BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 
+#[derive(Debug)]
+pub enum OutputFormat {
+    Full,
+    Cfile,
+}
+
 pub fn display_items<I>(iter: I, color_choice: ColorChoice) -> std::io::Result<usize>
 where
     I: Iterator<Item = Item>,

@@ -11,13 +11,21 @@ mod item;
 mod output;
 mod warning;
 
-use crate::output::display_items;
+use crate::output::{display_items, OutputFormat};
 
 fn try_parse_color_choice(s: &str) -> Result<ColorChoice, &str> {
     match s {
         "auto" => Ok(ColorChoice::Auto),
         "always" => Ok(ColorChoice::Always),
         "never" => Ok(ColorChoice::Never),
+        _ => Err("unknown value"),
+    }
+}
+
+fn try_parse_output_format(s: &str) -> Result<OutputFormat, &str> {
+    match s {
+        "full" => Ok(OutputFormat::Full),
+        "cfile" => Ok(OutputFormat::Cfile),
         _ => Err("unknown value"),
     }
 }
@@ -46,6 +54,16 @@ struct Opt {
     ///
     /// Valid values are: auto, always, never.
     color_choice: ColorChoice,
+
+    #[structopt(
+        long = "format",
+        default_value = "full",
+        parse(try_from_str = "try_parse_output_format")
+    )]
+    /// Output format template
+    ///
+    /// Valid values are: full, cfile
+    output_format: OutputFormat,
 }
 
 fn try_main() -> Result<usize, String> {
