@@ -8,15 +8,24 @@ use termcolor::ColorChoice;
 mod ansi;
 mod error;
 mod item;
+mod output;
 mod warning;
 
-use crate::item::display_items;
+use crate::output::{display_items, OutputFormat};
 
 fn try_parse_color_choice(s: &str) -> Result<ColorChoice, &str> {
     match s {
         "auto" => Ok(ColorChoice::Auto),
         "always" => Ok(ColorChoice::Always),
         "never" => Ok(ColorChoice::Never),
+        _ => Err("unknown value"),
+    }
+}
+
+fn try_parse_output_format(s: &str) -> Result<OutputFormat, &str> {
+    match s {
+        "full" => Ok(OutputFormat::Full),
+        "cfile" => Ok(OutputFormat::Cfile),
         _ => Err("unknown value"),
     }
 }
@@ -45,6 +54,16 @@ struct Opt {
     ///
     /// Valid values are: auto, always, never.
     color_choice: ColorChoice,
+
+    #[structopt(
+        long = "format",
+        default_value = "full",
+        parse(try_from_str = "try_parse_output_format")
+    )]
+    /// Output format template
+    ///
+    /// Valid values are: full, cfile
+    output_format: OutputFormat,
 }
 
 fn try_main() -> Result<usize, String> {
@@ -54,7 +73,8 @@ fn try_main() -> Result<usize, String> {
     if opt.errors.is_some() {
         let contents = std::fs::read_to_string(opt.errors.unwrap()).expect("failed to read file");
         let iter = error::parse(&contents).expect("failed to parse file");
-        total += display_items(iter, opt.color_choice).expect("failed to display errors");
+        total += display_items(iter, opt.output_format, opt.color_choice)
+            .expect("failed to display errors");
     }
 
     if opt.warnings.is_some() {
@@ -65,7 +85,8 @@ fn try_main() -> Result<usize, String> {
             .read_to_string(&mut contents)
             .expect("failed to decode file");
         let iter = warning::parse(&contents).expect("failed to parse file");
-        total += display_items(iter, opt.color_choice).expect("failed to display warnings");
+        total += display_items(iter, opt.output_format, opt.color_choice)
+            .expect("failed to display warnings");
     }
 
     Ok(total)
